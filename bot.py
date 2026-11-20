@@ -845,6 +845,8 @@ async def run():
                             try:
                                 if book_result is None:
                                     scan_stats["stale"] += 1
+                                    # Missing data is a hard break in signal continuity.
+                                    confirmation.reset(symbol)
                                     continue
 
                                 book, received_mono, version = book_result
