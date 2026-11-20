@@ -869,9 +869,10 @@ async def run():
 
                                     if version > last_processed_versions.get(symbol, 0):
                                         last_processed_versions[symbol] = version
-                                        confirmation.update(
-                                            symbol, 0, cfg.buy_ratio
-                                        )
+
+                                    # A stale cached snapshot breaks signal continuity
+                                    # even when no newer WebSocket version arrived.
+                                    confirmation.reset(symbol)
                                     continue
 
                                 # Count fresh cached books on every scan.
