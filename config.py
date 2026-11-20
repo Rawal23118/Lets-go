@@ -1,4 +1,5 @@
-﻿
+
+import math
 import os
 from dataclasses import dataclass
 from dotenv import load_dotenv
@@ -70,6 +71,29 @@ class Config:
         if self.mode not in ("paper", "live"):
             raise ValueError("TRADING_MODE must be paper or live")
 
+        finite_values = {
+            "MAX_ALLOCATION_USDT": self.allocation,
+            "MIN_BUY_RATIO": self.buy_ratio,
+            "SCAN_INTERVAL_SECONDS": self.scan_interval,
+            "MAX_SPREAD_BPS": self.max_spread_bps,
+            "MIN_24H_QUOTE_VOLUME_USDT": self.min_quote_volume,
+            "EMERGENCY_STOP_NET_PCT": self.emergency_stop_pct,
+            "DEFENSIVE_EXIT_RATIO": self.defensive_exit_ratio,
+            "DEFENSIVE_EXIT_LOSS_PCT": self.defensive_exit_loss_pct,
+            "MIN_NET_PROFIT_TO_TAKE": self.min_take_profit,
+            "MAX_NET_PROFIT_TARGET": self.max_take_profit,
+            "FEE_RATE_ESTIMATE": self.fee_rate,
+        }
+        invalid = [
+            name for name, value in finite_values.items()
+            if not math.isfinite(value)
+        ]
+        if invalid:
+            raise ValueError(
+                "Configuration contains non-finite numeric values: "
+                + ", ".join(invalid)
+            )
+
         if not 0 < self.allocation <= 20:
             raise ValueError(
                 "MAX_ALLOCATION_USDT must be greater than 0 "
@@ -88,9 +112,15 @@ class Config:
         if not 1 <= self.book_levels <= 50:
             raise ValueError("BOOK_LEVELS must be between 1 and 50")
 
-        if self.scan_interval <= 0 or self.max_book_age_ms < 250:
+        if (
+            self.scan_interval <= 0
+            or self.max_book_age_ms < 250
+            or self.max_spread_bps <= 0
+            or self.min_quote_volume <= 0
+            or self.max_age_minutes < 1
+        ):
             raise ValueError(
-                "Invalid scan interval or order-book freshness limit"
+                "Invalid scan interval, freshness, spread, volume, or holding-time limit"
             )
 
         if not 0 < self.min_take_profit < self.max_take_profit <= 40:
