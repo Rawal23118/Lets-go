@@ -19,6 +19,12 @@ class AnalyseBookTests(unittest.TestCase):
         with self.assertRaises(ValueError):
             analyse_book({"bids": [["102", "1"]], "asks": [["101", "1"]]})
 
+    def test_rejects_non_finite_and_non_positive_levels(self):
+        with self.assertRaises(ValueError):
+            analyse_book({"bids": [["100", "NaN"]], "asks": [["101", "1"]]})
+        with self.assertRaises(ValueError):
+            analyse_book({"bids": [["100", "-1"]], "asks": [["101", "1"]]})
+
 
 class ConfirmationTests(unittest.TestCase):
     def test_requires_continuous_confirmation(self):
