@@ -845,6 +845,8 @@ async def run():
                             try:
                                 if book_result is None:
                                     scan_stats["stale"] += 1
+                                    # Missing data is a hard break in signal continuity.
+                                    confirmation.reset(symbol)
                                     continue
 
                                 book, received_mono, version = book_result
@@ -869,9 +871,10 @@ async def run():
 
                                     if version > last_processed_versions.get(symbol, 0):
                                         last_processed_versions[symbol] = version
-                                        confirmation.update(
-                                            symbol, 0, cfg.buy_ratio
-                                        )
+
+                                    # A stale cached snapshot breaks signal continuity
+                                    # even when no newer WebSocket version arrived.
+                                    confirmation.reset(symbol)
                                     continue
 
                                 # Count fresh cached books on every scan.

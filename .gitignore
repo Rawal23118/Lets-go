@@ -1,7 +1,15 @@
 .env
+.env.*
+!.env.example
 *.db
+*.sqlite
 *.sqlite3
+*.bak
+*.log
+*.py[cod]
 __pycache__/
 .venv/
 venv/
-*.log
+.pytest_cache/
+.coverage
+htmlcov/

@@ -4,13 +4,13 @@ Python spot-market scanner using sustained bid-side order-book imbalance with ad
 
 ## Strategy defaults
 
-- Scans the highest-volume USDT spot pairs (default top 20; configurable up to 30).
+- Scans eligible USDT Spot crypto pairs selected across low-, mid-, and high-volume tiers (default top 20; configurable up to 1,000).
 - Bid-side share = bid notional / (bid notional + ask notional) × 100, using price × quantity over the configured depth.
-- Entry signal requires strictly more than 90% bid-side share for 3 continuous minutes. A reading of exactly 90% or lower, a wide spread, a missing/stale/malformed book, an API/data error, a gap of more than 15 seconds between valid observations, or a symbol leaving the monitored top-volume scan set resets its timer.
+- Entry signal requires strictly more than 90% bid-side share for 3 continuous minutes. A reading of exactly 90% or lower, a wide spread, a missing/stale/malformed book, an API/data error, a gap of more than 15 seconds between valid observations, or a symbol leaving the monitored scan set resets its timer.
 - Rejects order books older than 3 seconds (configurable).
 - One bot-managed position at a time; this order-book bot has its own configurable allocation, default 20 USDT and hard-capped at 20 USDT.
 - Adaptive profit-taking operates in the +20% to +40% estimated net-return band. The strategy considers pressure weakening, reversal and momentum stall; +40% is the hard upper exit.
-- Emergency stop and maximum holding time are configurable.
+- Emergency stop and maximum holding time are configurable. A separate experimental defensive exit requires bid-side share at or below 10% for 15 continuous seconds while estimated net P&L is at or below -0.35% (all three thresholds configurable).
 
 Order-book imbalance is only displayed depth. Orders can be cancelled or spoofed; it is not a measure of executed buying or a guarantee of future price movement.
 
@@ -25,7 +25,7 @@ Order-book imbalance is only displayed depth. Orders can be cancelled or spoofed
 - Added exchange symbol metadata checks (online status, min/max market-buy notional, quote precision and base quantity precision).
 - Market sell quantities are rounded down to the exchange's quantity precision and checked against the symbol's minimum notional.
 - Added stale order-book rejection, confirmation reset on API/data failures, a 15-second maximum gap between valid samples, and a local SQLite process lock to prevent two copies of this bot using the same state database.
-- Added tests for precision, market-order validation, journal uniqueness and strategy confirmation.
+- Added automated unit tests for order-book parsing, strategy confirmation/exits, market eligibility, volume selection, precision, market-order validation and journal uniqueness. GitHub Actions runs the test suite and byte-compilation on pushes and pull requests.
 
 ## Setup (Windows PowerShell)
 

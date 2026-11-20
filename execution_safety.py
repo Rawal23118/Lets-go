@@ -31,8 +31,16 @@ def validate_market_buy(symbol_info, quote_amount):
         maximum = Decimal(str(symbol_info.get("maxMarketOrderValue") or "0"))
     except InvalidOperation as exc:
         raise SafetyError("Invalid exchange notional metadata") from exc
-    if not amount.is_finite() or amount <= 0 or (minimum > 0 and amount < minimum):
-        raise SafetyError("Market buy is invalid or below Bitget minimum")
+    if (
+        not amount.is_finite()
+        or not minimum.is_finite()
+        or not maximum.is_finite()
+        or amount <= 0
+        or minimum < 0
+        or maximum < 0
+        or (minimum > 0 and amount < minimum)
+    ):
+        raise SafetyError("Market buy or exchange notional metadata is invalid")
     if maximum > 0 and amount > maximum:
         raise SafetyError("Market buy exceeds Bitget maximum")
     return amount
@@ -100,10 +108,22 @@ def prepare_market_sell(symbol_info, base_amount, best_bid):
     if not symbol_info or symbol_info.get("status") != "online":
         raise SafetyError("Symbol is not online for selling")
     qty = floor_to_precision(base_amount, symbol_info.get("quantityPrecision", 0))
-    minimum = Decimal(str(symbol_info.get("minTradeUSDT") or "0"))
-    value = qty * Decimal(str(best_bid))
-    if qty <= 0 or not value.is_finite():
-        raise SafetyError("Sell quantity or notional is invalid")
+    try:
+        minimum = Decimal(str(symbol_info.get("minTradeUSDT") or "0"))
+        bid = Decimal(str(best_bid))
+    except (InvalidOperation, TypeError, ValueError) as exc:
+        raise SafetyError("Invalid sell price or exchange minimum notional") from exc
+    value = qty * bid
+    if (
+        not qty.is_finite()
+        or qty <= 0
+        or not minimum.is_finite()
+        or minimum < 0
+        or not bid.is_finite()
+        or bid <= 0
+        or not value.is_finite()
+    ):
+        raise SafetyError("Sell quantity, price, or notional is invalid")
     if minimum > 0 and value < minimum:
         raise SafetyError("Remaining position value is below Bitget minimum")
     return qty

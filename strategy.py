@@ -1,5 +1,6 @@
 from dataclasses import dataclass
 from collections import deque
+import math
 import time
 
 
@@ -18,34 +19,61 @@ def analyse_book(book):
     if not bids or not asks:
         raise ValueError("Empty order book")
 
-    bid_value = sum(float(p) * float(q) for p, q in bids)
-    ask_value = sum(float(p) * float(q) for p, q in asks)
+    def parse_levels(levels, side):
+        parsed = []
+        total_value = 0.0
+        for level in levels:
+            if not isinstance(level, (list, tuple)) or len(level) < 2:
+                raise ValueError(f"Malformed {side} level")
+            try:
+                price = float(level[0])
+                quantity = float(level[1])
+            except (TypeError, ValueError, OverflowError) as exc:
+                raise ValueError(f"Invalid {side} price or quantity") from exc
+            if (
+                not math.isfinite(price)
+                or not math.isfinite(quantity)
+                or price <= 0
+                or quantity <= 0
+            ):
+                raise ValueError(f"Non-positive or non-finite {side} level")
+            total_value += price * quantity
+            if not math.isfinite(total_value):
+                raise ValueError(f"Non-finite {side} depth")
+            parsed.append((price, quantity))
+        return parsed, total_value
+
+    parsed_bids, bid_value = parse_levels(bids, "bid")
+    parsed_asks, ask_value = parse_levels(asks, "ask")
     total = bid_value + ask_value
 
-    if total <= 0:
-        raise ValueError("Empty order-book depth")
+    if not math.isfinite(total) or total <= 0:
+        raise ValueError("Empty or invalid order-book depth")
 
-    best_bid = float(bids[0][0])
-    best_ask = float(asks[0][0])
+    best_bid = parsed_bids[0][0]
+    best_ask = parsed_asks[0][0]
 
-    if best_bid <= 0 or best_ask <= best_bid:
+    if best_ask <= best_bid:
         raise ValueError("Invalid/crossed order book")
 
     mid = (best_bid + best_ask) / 2
+    ratio = 100 * bid_value / total
+    spread_bps = 10000 * (best_ask - best_bid) / mid
+    if not math.isfinite(ratio) or not math.isfinite(spread_bps):
+        raise ValueError("Non-finite order-book signal")
 
     return BookSignal(
-        100 * bid_value / total,
-        10000 * (best_ask - best_bid) / mid,
+        ratio,
+        spread_bps,
         mid,
         bid_value,
         ask_value,
     )
 
-
 class Confirmation:
     """Require a continuously valid signal; gaps break continuity."""
 
-    def __init__(self, seconds, max_gap_seconds=25):
+    def __init__(self, seconds, max_gap_seconds=15):
         if seconds <= 0 or max_gap_seconds <= 0:
             raise ValueError("Confirmation durations must be positive")
 
