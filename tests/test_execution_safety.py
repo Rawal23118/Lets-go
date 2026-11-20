@@ -37,12 +37,17 @@ class MarketValidationTests(unittest.TestCase):
             validate_market_buy(self.meta, "4")
         with self.assertRaises(SafetyError):
             validate_market_buy(self.meta, "101")
+        bad_meta = dict(self.meta, minTradeUSDT="NaN")
+        with self.assertRaises(SafetyError):
+            validate_market_buy(bad_meta, "10")
 
     def test_market_sell_rounds_down_and_checks_minimum(self):
         qty = prepare_market_sell(self.meta, "0.1239", "100")
         self.assertEqual(qty, Decimal("0.123"))
         with self.assertRaises(SafetyError):
             prepare_market_sell(self.meta, "0.001", "100")
+        with self.assertRaises(SafetyError):
+            prepare_market_sell(self.meta, "0.1", "NaN")
 
 
 class JournalTests(unittest.TestCase):
