@@ -30,7 +30,7 @@ class Config:
     confirm_seconds: int = 180
 
     book_levels: int = int(os.getenv("BOOK_LEVELS", "15"))
-    top_symbols: int = int(os.getenv("TOP_SYMBOLS", "30"))
+    top_symbols: int = int(os.getenv("TOP_SYMBOLS", "20"))
 
     scan_interval: float = float(os.getenv("SCAN_INTERVAL_SECONDS", "1"))
     max_book_age_ms: int = int(os.getenv("MAX_BOOK_AGE_MS", "3000"))
