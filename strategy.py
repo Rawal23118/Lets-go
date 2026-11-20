@@ -45,7 +45,7 @@ def analyse_book(book):
 class Confirmation:
     """Require a continuously valid signal; gaps break continuity."""
 
-    def __init__(self, seconds, max_gap_seconds=25):
+    def __init__(self, seconds, max_gap_seconds=15):
         if seconds <= 0 or max_gap_seconds <= 0:
             raise ValueError("Confirmation durations must be positive")
 
