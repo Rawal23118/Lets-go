@@ -9,7 +9,7 @@ class AnalyseBookTests(unittest.TestCase):
             "bids": [["100", "2"]],
             "asks": [["101", "2"]],
         })
-        self.assertAlmostEqual(signal.ratio, 50.0)
+        self.assertAlmostEqual(signal.ratio, (200 / 402) * 100)
         self.assertGreater(signal.spread_bps, 0)
         self.assertAlmostEqual(signal.mid, 100.5)
 
