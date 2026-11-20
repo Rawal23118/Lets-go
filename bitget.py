@@ -111,14 +111,16 @@ class Bitget:
         query = urlencode(sorted((k, str(v)) for k, v in params.items()))
         body = json.dumps(payload, separators=(",", ":"), ensure_ascii=False) if payload is not None else ""
         url = BASE + path + (("?" + query) if query else "")
-        headers = {}
-        if private:
-            if not all((self.key, self.secret, self.passphrase)):
-                raise BitgetError("Missing API credentials")
-            headers = self._headers(str(int(time.time() * 1000)), method, path, query, body)
+        if private and not all((self.key, self.secret, self.passphrase)):
+            raise BitgetError("Missing API credentials")
         attempts = 3 if method.upper() == "GET" else 1
 
         for attempt in range(attempts):
+            # Re-sign every private retry with a fresh timestamp.
+            headers = (
+                self._headers(str(int(time.time() * 1000)), method, path, query, body)
+                if private else {}
+            )
             try:
                 async with self.session.request(
                     method, url,
